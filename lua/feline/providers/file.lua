@@ -28,23 +28,30 @@ local function get_unique_filename(filename, shorten)
     filename = string.reverse(filename)
     filenames = vim.tbl_map(string.reverse, filenames)
 
-    local index
+    -- The index is a 1-based integer position into filename.
+    ---@type integer
+    local index = 1
 
-    -- For every other filename, compare it with the name of the current file char-by-char to
-    -- find the minimum index `i` where the i-th character is different for the two filenames
-    -- After doing it for every filename, get the maximum value of `i`
-    if next(filenames) then
-        index = math.max(unpack(vim.tbl_map(function(filename_other)
-            for i = 1, #filename do
-                -- Compare i-th character of both names until they aren't equal
-                if filename:sub(i, i) ~= filename_other:sub(i, i) then
-                    return i
-                end
+    -- For every other filename, compare it with the current file char-by-char to
+    -- find the first index where they differ; keep the maximum such index across
+    -- all other filenames, so the result is the shortest unambiguous suffix.
+    -- Done as an explicit integer loop rather than math.max(unpack(tbl_map(...)))
+    -- so the value stays typed `integer` (tbl_map's generic widens to
+    -- string|integer) and so a large filename list can't overflow unpack's arg
+    -- limit.
+    for _, filename_other in ipairs(filenames) do
+        ---@type integer
+        local diff = 1
+        for i = 1, #filename do
+            -- Compare the i-th character of both names until they aren't equal.
+            if filename:sub(i, i) ~= filename_other:sub(i, i) then
+                diff = i
+                break
             end
-            return 1
-        end, filenames)))
-    else
-        index = 1
+        end
+        if diff > index then
+            index = diff
+        end
     end
 
     -- Iterate backwards (since filename is reversed) until a "/" is found

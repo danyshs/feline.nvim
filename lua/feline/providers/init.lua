@@ -60,7 +60,7 @@ return setmetatable({}, {
     -- the category of their name to 'custom'
     __newindex = function(_, name, provider)
         if get_provider_category[name] then
-            vim.api.nvim_err_writeln(
+            require('feline.utils').error(
                 string.format(
                     'Feline: error while adding provider: '
                         .. "Provider '%s' already exists! Please try using another name",

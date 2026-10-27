@@ -3,6 +3,16 @@ local api = vim.api
 
 local M = {}
 
+-- Report a Feline error to the user on the error stream. Replaces the
+-- deprecated api.nvim_err_writeln (removed in a future Neovim): nvim_echo with
+-- { err = true } writes to the error stream the same way, so error messages
+-- still show in red and land in :messages, without the deprecation.
+---@param msg string The error message to display.
+function M.error(msg)
+    assert(type(msg) == 'string', 'Feline error message must be a string')
+    api.nvim_echo({ { msg, 'ErrorMsg' } }, true, { err = true })
+end
+
 -- Utility function to create augroups
 function M.create_augroup(autocmds, name, no_clear)
     if no_clear == nil then
@@ -78,7 +88,7 @@ function M.parse_config(config_dict, defaults)
         if config_dict[config_name] == nil then
             parsed_config[config_name] = config_info.default_value
         elseif not config_has_correct_type(config_name, config_info.type) then
-            api.nvim_err_writeln(
+            M.error(
                 string.format(
                     "Feline: expected type '%s' for config option '%s', got '%s'",
                     config_info.type,

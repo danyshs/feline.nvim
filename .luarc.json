@@ -1,0 +1,6 @@
+{
+  "runtime.version": "LuaJIT",
+  "workspace.library": [
+    "${env:HOME}/Library/Application Support/bob/nightly/share/nvim/runtime/lua"
+  ]
+}

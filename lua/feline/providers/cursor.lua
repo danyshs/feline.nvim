@@ -14,8 +14,11 @@ function M.position(_, opts)
     -- Replace tabs with the equivalent amount of spaces according to the value of 'tabstop'
     before_cursor = before_cursor:gsub('\t', string.rep(' ', vim.bo.tabstop))
 
-    -- Turn col from byteindex to column number and make it start from 1
-    col = vim.str_utfindex(before_cursor, 'utf-32') + 1
+    -- Turn col from byteindex to column number and make it start from 1.
+    -- The 3-arg str_utfindex (encoding + byte index) replaces the deprecated
+    -- 2-arg form; passing #before_cursor as the index yields the utf-32 length
+    -- of the whole string, as the old call did.
+    col = vim.str_utfindex(before_cursor, 'utf-32', #before_cursor) + 1
 
     local linenr_min_width, colnr_min_width
 

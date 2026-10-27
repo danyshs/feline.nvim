@@ -1,15 +1,15 @@
 local api = vim.api
+local utils = require('feline.utils')
 
 -- Check if Neovim version is 0.7 or greater
 if vim.fn.has('nvim-0.7') ~= 1 then
-    api.nvim_err_writeln(
+    utils.error(
         'Feline is only available for Neovim versions 0.7 and above. For Neovim 0.5'
             .. 'compatibility, use the 0.5-compat branch'
     )
     return
 end
 
-local utils = require('feline.utils')
 local defaults = require('feline.defaults')
 local themes = utils.lazy_require('feline.themes')
 local Generator = utils.lazy_require('feline.generator')
@@ -34,7 +34,7 @@ function M.use_theme(name_or_tbl)
 
     if type(name_or_tbl) == 'string' then
         if not themes[name_or_tbl] then
-            api.nvim_err_writeln(string.format("Theme '%s' not found!", name_or_tbl))
+            utils.error(string.format("Theme '%s' not found!", name_or_tbl))
             return
         end
 
@@ -63,7 +63,7 @@ end
 -- Check if component with `name` in the statusline of window `winid` is truncated or hidden
 local function is_component_truncated(generator, winid, name)
     if generator.component_truncated[winid][name] == nil then
-        api.nvim_err_writeln(string.format("Component with name '%s' not found", name))
+        utils.error(string.format("Component with name '%s' not found", name))
         return
     end
 
@@ -73,7 +73,7 @@ end
 -- Check if component with `name` in the statusline of window `winid` is hidden
 local function is_component_hidden(generator, winid, name)
     if generator.component_hidden[winid][name] == nil then
-        api.nvim_err_writeln(string.format("Component with name '%s' not found", name))
+        utils.error(string.format("Component with name '%s' not found", name))
         return
     end
 
@@ -168,7 +168,7 @@ end
 function M.setup(config)
     -- Check if termguicolors is enabled
     if not vim.o.termguicolors then
-        api.nvim_err_writeln(
+        utils.error(
             "Feline needs 'termguicolors' to be enabled to work properly\n"
                 .. "Please do `:help 'termguicolors'` in Neovim for more information"
         )

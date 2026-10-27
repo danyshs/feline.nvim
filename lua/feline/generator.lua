@@ -25,19 +25,34 @@ end
 -- If highlight is a string, use it as highlight name and
 -- extract the properties from the highlight
 local function get_hl_properties(hlname)
-    local hl = api.nvim_get_hl_by_name(hlname, true)
+    -- nvim_get_hl replaces the deprecated nvim_get_hl_by_name. It returns fg/bg
+    -- as numbers and each active style attribute (bold, italic, ...) as a
+    -- top-level boolean, so the style list is built by scanning those keys with
+    -- pairs. (The old code looped the string-keyed table with ipairs, which
+    -- iterates only sequential integer keys and so never collected any style -
+    -- a latent bug fixed by the switch.) link = false resolves the colours of a
+    -- linked group instead of returning only its link target.
+    local hl = api.nvim_get_hl(0, { name = hlname, link = false })
     local styles = {}
 
-    for k, v in ipairs(hl) do
-        if v == true then
-            styles[#styles + 1] = k
+    for _, attr in ipairs {
+        'bold',
+        'italic',
+        'reverse',
+        'standout',
+        'underline',
+        'undercurl',
+        'strikethrough',
+    } do
+        if hl[attr] then
+            styles[#styles + 1] = attr
         end
     end
 
     return {
         name = hlname,
-        fg = hl.foreground and string.format('#%06x', hl.foreground),
-        bg = hl.background and string.format('#%06x', hl.background),
+        fg = hl.fg and string.format('#%06x', hl.fg),
+        bg = hl.bg and string.format('#%06x', hl.bg),
         style = next(styles) and table.concat(styles, ',') or 'NONE',
     }
 end
@@ -301,18 +316,16 @@ local function parse_provider(gen, provider, component, is_short, winid, section
         local provider_fn, provider_opts
 
         if not provider.name then
-            api.nvim_err_writeln("Provider table doesn't have the provider name")
+            utils.error("Provider table doesn't have the provider name")
         elseif type(provider.name) ~= 'string' then
-            api.nvim_err_writeln(
+            utils.error(
                 string.format(
                     "Expected 'string' for provider name, got '%s' instead",
                     type(provider.name)
                 )
             )
         elseif not feline.providers[provider.name] then
-            api.nvim_err_writeln(
-                string.format("Provider with name '%s' doesn't exist", provider.name)
-            )
+            utils.error(string.format("Provider with name '%s' doesn't exist", provider.name))
         else
             provider_fn = feline.providers[provider.name]
             provider_opts = provider.opts or {}
@@ -395,7 +408,7 @@ local function parse_provider(gen, provider, component, is_short, winid, section
     end
 
     if type(str) ~= 'string' then
-        api.nvim_err_writeln(
+        utils.error(
             string.format("Provider must evaluate to string, got type '%s' instead", type(provider))
         )
 
@@ -487,7 +500,7 @@ local function parse_component_handle_errors(
         pcall(parse_component, gen, component, use_short_provider, winid, section_nr, component_nr)
 
     if not ok then
-        api.nvim_err_writeln(
+        utils.error(
             string.format(
                 'Feline: error while processing %s component number %d on section %d of type '
                     .. "'%s' for window %d: %s",
@@ -586,7 +599,7 @@ function Generator:generate(is_active, maxwidth)
         for j, component in ipairs(section) do
             if component.name then
                 if self.component_truncated[winid][component.name] ~= nil then
-                    api.nvim_err_writeln(
+                    utils.error(
                         string.format(
                             'Feline: error while parsing components for window %d: '
                                 .. "Multiple components with name '%s'",
